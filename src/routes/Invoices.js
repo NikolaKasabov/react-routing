@@ -1,8 +1,13 @@
-import { Link, Outlet } from "react-router-dom";
+import { Outlet, NavLink, useSearchParams, useLocation } from "react-router-dom";
 import { getInvoices } from "../data";
 
 export default function Invoices() {
   let invoices = getInvoices();
+  let [searchParams, setSearchParams] = useSearchParams();
+
+  let location = useLocation();
+  console.log(location); // {pathname: '/invoices/1995', search: '?filter=sa', hash: '', state: null, key: 'isbigfvz'}
+
   return (
     <div style={{ display: "flex" }}>
       <nav
@@ -11,15 +16,41 @@ export default function Invoices() {
           padding: "1rem"
         }}
       >
-        {invoices.map(invoice => (
-          <Link
-            style={{ display: "block", margin: "1rem 0" }}
-            to={`/invoices/${invoice.number}`}
-            key={invoice.number}
-          >
-            {invoice.name}
-          </Link>
-        ))}
+        <input
+          value={searchParams.get('filter') || ''}
+          onChange={event => {
+            let filter = event.target.value;
+            if (filter) {
+              setSearchParams({ filter });
+            } else {
+              setSearchParams({});
+            }
+          }}
+        />
+
+        {/* The active <NavLink> gets class="active" automatically */}
+        {invoices
+          .filter(invoice => {
+            let filter = searchParams.get('filter');
+            if (!filter) return true;
+            let name = invoice.name.toLowerCase();
+            return name.startsWith(filter.toLowerCase());
+          })
+          .map(invoice => (
+            <NavLink
+              style={({ isActive }) => {
+                return {
+                  display: 'block',
+                  margin: '1rem 0',
+                  color: isActive ? 'red' : ''
+                }
+              }}
+              to={`/invoices/${invoice.number}`}
+              key={invoice.number}
+            >
+              {invoice.name}
+            </NavLink>
+          ))}
       </nav>
 
       <Outlet />
